@@ -34,6 +34,7 @@ use \Magento\Payment\Gateway\Command\CommandPoolInterface;
 use \Magento\Payment\Gateway\Config\ValueHandlerPoolInterface;
 use \Magento\Payment\Gateway\Validator\ValidatorPoolInterface;
 use \Magento\Payment\Gateway\Data\PaymentDataObjectFactory;
+use Sofinco\Epayment\Helper\Utf8Data;
 
 abstract class AbstractPayment extends AbstractMethod
 {
@@ -362,7 +363,7 @@ abstract class AbstractPayment extends AbstractMethod
         $this->logDebug(sprintf('Order %s: Capture - response code %s', $order->getIncrementId(), $data['CODEREPONSE']));
 
         // Fix possible invalid utf-8 chars
-        $data = array_map('utf8_decode', $data);
+        $data = array_map([Utf8Data::class, 'decode'], $data);
 
         // Message
         if ($data['CODEREPONSE'] == '00000') {
@@ -423,7 +424,7 @@ abstract class AbstractPayment extends AbstractMethod
     public function checkIpnParams(Order $order, array $params)
     {
         // Check required parameters
-        $requiredParams = ['amount', 'transaction', 'error', 'reference', 'sign', 'date', 'time'];
+        $requiredParams = ['amount', 'transaction', 'error', 'reference', 'sign'];
         foreach ($requiredParams as $requiredParam) {
             if (!isset($params[$requiredParam])) {
                 $message = __('Missing ' . $requiredParam . ' parameter in Sofinco call');
@@ -698,7 +699,7 @@ abstract class AbstractPayment extends AbstractMethod
         $data = $connector->directRefund((float) $amount, $order, $txn);
 
         // Fix possible invalid utf-8 chars
-        $data = array_map('utf8_decode', $data);
+        $data = array_map([Utf8Data::class, 'decode'], $data);
 
         // Message
         if ($data['CODEREPONSE'] == '00000') {
@@ -985,6 +986,11 @@ abstract class AbstractPayment extends AbstractMethod
             $this->_createInvoice($payment, $order, $txn);
         }
 
+        // Send email confirmation
+        $emailSender = $this->_objectManager->create('\Magento\Sales\Model\Order\Email\Sender\OrderSender');
+        $emailSender->send($order);
+        $order->setIsCustomerNotified(true);
+
         $payment->save();
         $order->save();
     }
@@ -1010,8 +1016,7 @@ abstract class AbstractPayment extends AbstractMethod
 
             $order->addRelatedObject($invoice);
             $order->addStatusHistoryComment(__('You notified customer about invoice #%1.', $invoice->getIncrementId()))
-                ->setIsCustomerNotified(true)
-                ->save();
+                ->setIsCustomerNotified(true);
         }
 
         return $invoice;

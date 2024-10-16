@@ -25,6 +25,7 @@ use Magento\Payment\Gateway\ConfigInterface;
 use Magento\Payment\Gateway\Data\PaymentDataObjectInterface;
 use Magento\Payment\Gateway\Request\BuilderInterface;
 use Magento\Sales\Api\Data\OrderPaymentInterface;
+use Sofinco\Epayment\Helper\Utf8Data;
 
 class CaptureRequest implements BuilderInterface
 {
@@ -138,7 +139,7 @@ class CaptureRequest implements BuilderInterface
         $this->logDebug(sprintf('Order %s: Capture - response code %s', $order->getIncrementId(), $data['CODEREPONSE']));
 
         // Fix possible invalid utf-8 chars
-        $data = array_map('utf8_decode', $data);
+        $data = array_map([Utf8Data::class, 'decode'], $data);
 
         // Message
         if ($data['CODEREPONSE'] == '00000') {

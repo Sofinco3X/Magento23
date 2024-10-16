@@ -1,4 +1,10 @@
 # Change Log
+## [1.0.19] 2024-10-16
+- Improve compatibility with Magento 2.4.6 & PHP 8.2 compatibility
+- Fix order confirmation email
+- Single payment method fixes
+- Fixes on PBX_BILLING
+
 ## [1.0.18] 2023-02-08
 Update BackOffice settings
 Add PBX_SHOPPINGCART

@@ -80,8 +80,13 @@
             <div class="primary">
                 <button class="action primary checkout"
                         type="submit"
-                        data-bind="click: continueToSofinco, enable: (getCode() == isChecked()), attr: {title: $t('Place Order')}"
-                        >
+                        data-bind="
+                        click: continueToSofinco,
+                        attr: {title: $t('Place Order')},
+                        css: {disabled: !isPlaceOrderActionAllowed()},
+                        enable: (getCode() == isChecked())
+                        "
+                        disabled>
                     <span data-bind="i18n: 'Place Order'"></span>
                 </button>
             </div>

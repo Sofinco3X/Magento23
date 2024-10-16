@@ -42,7 +42,7 @@ define(
                         list[key] = filterTemplateData(value);
                     }
 
-                    if (key === '__disableTmpl') {
+                    if (key === '__disableTmpl' || key == 'title') {
                         delete list[key];
                     }
                 });
@@ -82,9 +82,10 @@ define(
             ).fail(
                 function (response) {
                     errorProcessor.process(response, messageContainer);
-                    fullScreenLoader.stopLoader();
                 }
-            );
+            ).always(function() {
+                fullScreenLoader.stopLoader();
+            });
         };
     }
 );

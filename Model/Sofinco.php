@@ -25,6 +25,7 @@ use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Payment\Transaction;
 use \SimpleXMLElement;
 use Sofinco\Epayment\Model\Payment\AbstractPayment;
+use Sofinco\Epayment\Helper\Utf8Data;
 
 class Sofinco
 {
@@ -328,29 +329,28 @@ class Sofinco
         $url = $this->checkUrls($urls);
 
         // Init client
-        $clt = new \Magento\Framework\HTTP\ZendClient(
-            $url,
-            [
-            'maxredirects' => 0,
-            'useragent' => 'Magento Sofinco module',
+        $client = new \GuzzleHttp\Client([
+            'allow_redirects' => false,
+            'headers' => [
+                'User-Agent' => 'Magento Sofinco module',
+            ],
             'timeout' => 5,
-            ]
-        );
-        $clt->setMethod(\Magento\Framework\HTTP\ZendClient::POST);
-        $clt->setRawData(http_build_query($fields));
+        ]);
 
         // Do call
-        $response = $clt->request();
+        try {
+            $response = $client->request('POST', $url, [
+                'body' => http_build_query($fields),
+            ]);
 
-        if ($response->isSuccessful()) {
             // Process result
             $result = [];
             parse_str($response->getBody(), $result);
             return $result;
+        } catch (\Exception $e) {
+            // Here, there's a problem
+            throw new \LogicException(__('Sofinco not available. Please try again later.'));
         }
-
-        // Here, there's a problem
-        throw new \LogicException(__('Sofinco not available. Please try again later.'));
     }
 
     public function buildSystemParams(Order $order, AbstractPayment $payment)
@@ -537,27 +537,24 @@ class Sofinco
     public function checkUrls(array $urls)
     {
         // Init client
-        $client = new \Magento\Framework\HTTP\ZendClient(
-            null,
-            [
-            'maxredirects' => 0,
-            'useragent' => 'Magento Sofinco module',
+        $client = new \GuzzleHttp\Client([
+            'allow_redirects' => false,
+            'headers' => [
+                'User-Agent' => 'Magento Sofinco module',
+            ],
             'timeout' => 5,
-            ]
-        );
-        $client->setMethod(\Magento\Framework\HTTP\ZendClient::GET);
+        ]);
 
         $error = null;
         foreach ($urls as $url) {
             $testUrl = preg_replace('#^([a-zA-Z0-9]+://[^/]+)(/.*)?$#', '\1/load.html', $url);
-            $client->setUri($testUrl);
 
             try {
-                $response = $client->request();
-                if ($response->isSuccessful()) {
+                $response = $client->request('GET', $testUrl);
+                if ($response->getStatusCode() == 200) {
                     return $url;
                 }
-            } catch (\LogicException $e) {
+            } catch (\Exception $e) {
                 $error = $e;
             }
         }
@@ -594,7 +591,7 @@ class Sofinco
         $result = [];
         foreach ($this->_resultMapping as $param => $key) {
             if (isset($params[$param])) {
-                $result[$key] = utf8_encode($params[$param]);
+                $result[$key] = Utf8Data::encode($params[$param]);
             }
         }
 
@@ -643,6 +640,66 @@ class Sofinco
         return trim(substr($simpleXMLElement->asXML(), 21));
     }
 
+    /**
+     * Format a value to respect specific rules
+     *
+     * @param string $value
+     * @param string $type
+     * @param int $maxLength
+     * @return string
+     */
+    protected function formatTextValue($value, $type, $maxLength = null)
+    {
+        /*
+        AN : Alphanumerical without special characters
+        ANP : Alphanumerical with spaces and special characters
+        ANS : Alphanumerical with special characters
+        N : Numerical only
+        A : Alphabetic only
+        */
+
+        // Handle possible null values
+        if (!is_string($value)) {
+            $value = '';
+        }
+
+        switch ($type) {
+            default:
+            case 'AN':
+                $value = $this->_objectManager->get('Magento\Framework\Filter\RemoveAccents')->filter($value);
+                break;
+            case 'ANP':
+                $value = $this->_objectManager->get('Magento\Framework\Filter\RemoveAccents')->filter($value);
+                $value = preg_replace('/[^-. a-zA-Z0-9]/', '', $value);
+                break;
+            case 'ANS':
+                $value = $this->_objectManager->get('Magento\Framework\Filter\RemoveAccents')->filter($value);
+                break;
+            case 'N':
+                $value = preg_replace('/[^0-9.]/', '', $value);
+                break;
+            case 'A':
+                $value = $this->_objectManager->get('Magento\Framework\Filter\RemoveAccents')->filter($value);
+                $value = preg_replace('/[^A-Za-z]/', '', $value);
+                break;
+        }
+        // Remove carriage return characters, specials chars
+        $value = trim(preg_replace("/\r|\n|&|<|>/", '', $value));
+
+        // Cut the string when needed
+        if (!empty($maxLength) && is_numeric($maxLength) && $maxLength > 0) {
+            if (function_exists('mb_strlen')) {
+                if (mb_strlen($value) > $maxLength) {
+                    $value = mb_substr($value, 0, $maxLength);
+                }
+            } elseif (strlen($value) > $maxLength) {
+                $value = substr($value, 0, $maxLength);
+            }
+        }
+
+        return trim($value);
+    }
+
     public function getBillingInformation(Order $order)
     {
         $address = $order->getBillingAddress();
@@ -686,14 +743,14 @@ class Sofinco
         // $billingXML = $simpleXMLElement->addChild('Billing');
         $addressXML = $simpleXMLElement->addChild('Address');
         $addressXML->addChild('Title', $title);
-        $addressXML->addChild('FirstName', $firstName);
-        $addressXML->addChild('LastName', $lastName);
-        $addressXML->addChild('Address1', $address1);
-        $addressXML->addChild('Address2', $address2);
-        $addressXML->addChild('ZipCode', $zipCode);
-        $addressXML->addChild('City', $city);
+        $addressXML->addChild('FirstName', $this->formatTextValue($firstName, 'ANS', 20));
+        $addressXML->addChild('LastName', $this->formatTextValue($lastName, 'ANS', 20));
+        $addressXML->addChild('Address1', $this->formatTextValue($address1, 'ANS', 50));
+        $addressXML->addChild('Address2', $this->formatTextValue($address2, 'ANS', 50));
+        $addressXML->addChild('ZipCode', $this->formatTextValue($zipCode, 'ANS', 16));
+        $addressXML->addChild('City', $this->formatTextValue($city, 'ANS', 50));
         $addressXML->addChild('CountryCode', $countryCode);
-        $addressXML->addChild('CountryName', $countryName);
+        $addressXML->addChild('CountryName', $this->formatTextValue($countryName, 'ANS', 50));
         $addressXML->addChild('CountryCodeHomePhone', $countryCodeHomePhone);
         $addressXML->addChild('HomePhone', $homePhone);
         $addressXML->addChild('CountryCodeMobilePhone', $countryCodeMobilePhone);
@@ -731,6 +788,9 @@ class Sofinco
             'ô'=>'o', 'õ'=>'o', 'ö'=>'o', 'ø'=>'o', 'ù'=>'u', 'ú'=>'u', 'û'=>'u', 'ý'=>'y', 'ý'=>'y', 'þ'=>'b',
             'ÿ'=>'y', 'Ŕ'=>'R', 'ŕ'=>'r',
         );
+
+        // Remove carriage return characters, specials chars
+        $string = trim(preg_replace("/\r|\n|&|<|>/", '', $string));
 
         return strtr($string, $table);
     }
@@ -952,7 +1012,7 @@ class Sofinco
         }
 
         $goodName = $this->getBillingName($order);
-        if (($goodName != utf8_decode($parts[1])) && ($goodName != $parts[1])) {
+        if (($goodName != Utf8Data::decode($parts[1])) && ($goodName != $parts[1])) {
             $message = 'Consistency error on descrypted token "%s"';
             throw new \LogicException(__($message, $token));
         }

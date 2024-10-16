@@ -127,6 +127,11 @@ class Threetime extends AbstractPayment
 
             $this->logDebug(sprintf('Order %s: %s', $order->getIncrementId(), $message));
 
+            // Send email confirmation
+            $emailSender = $this->_objectManager->create('\Magento\Sales\Model\Order\Email\Sender\OrderSender');
+            $emailSender->send($order);
+            $order->setIsCustomerNotified(true);
+
             // Create invoice is needed
             $invoice = $this->_createInvoice($payment, $order, $txn);
         } elseif (is_null($payment->getSfcoSecondPayment())) {
