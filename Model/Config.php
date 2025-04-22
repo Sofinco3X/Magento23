@@ -45,28 +45,9 @@ class Config extends \Magento\Payment\Model\Config
         'rank' => 'merchant/rank',
         'site' => 'merchant/site',
         'subscription' => 'merchant/subscription',
-        'kwixoShipping' => 'kwixo/shipping'
     ];
     private $_urls = [
         'system' => [
-            'test' => [
-                'https://preprod-tpeweb.paybox.com/php/'
-            ],
-            'production' => [
-                'https://tpeweb1.paybox.com/php/',
-                'https://tpeweb.paybox.com/php/',
-            ],
-        ],
-        'kwixo' => [
-            'test' => [
-                'https://preprod-tpeweb.paybox.com/php/'
-            ],
-            'production' => [
-                'https://tpeweb1.paybox.com/php/',
-                'https://tpeweb.paybox.com/php/',
-            ],
-        ],
-        'mobile' => [
             'test' => [
                 'https://preprod-tpeweb.paybox.com/php/'
             ],
@@ -185,16 +166,6 @@ class Config extends \Magento\Payment\Model\Config
         return $this->_getUrls('system', $environment);
     }
 
-    public function getKwixoUrls($environment = null)
-    {
-        return $this->_getUrls('kwixo', $environment);
-    }
-
-    public function getMobileUrls($environment = null)
-    {
-        return $this->_getUrls('mobile', $environment);
-    }
-
     public function getDirectUrls($environment = null)
     {
         return $this->_getUrls('direct', $environment);
@@ -238,33 +209,6 @@ class Config extends \Magento\Payment\Model\Config
         $value = $this->_getConfigValue('sfco/info/currency');
         if (is_null($value)) {
             $value = 1;
-        }
-        return (int) $value;
-    }
-
-    public function getKwixoDefaultCategory()
-    {
-        $value = $this->_getConfigValue('sfco/kwixo/default_category');
-        if (is_null($value)) {
-            $value = 1;
-        }
-        return (int) $value;
-    }
-
-    public function getKwixoDefaultCarrierType()
-    {
-        $value = $this->_getConfigValue('sfco/kwixo/default_carrier_type');
-        if (is_null($value)) {
-            $value = 4;
-        }
-        return (int) $value;
-    }
-
-    public function getKwixoDefaultCarrierSpeed()
-    {
-        $value = $this->_getConfigValue('sfco/kwixo/default_carrier_speed');
-        if (is_null($value)) {
-            $value = 2;
         }
         return (int) $value;
     }

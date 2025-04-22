@@ -53,20 +53,6 @@ class Redirect extends \Magento\Framework\View\Element\Template
         return 'hidden';
     }
 
-    public function getKwixoUrl()
-    {
-        $sofinco = $this->_objectManager->get('Sofinco\Epayment\Model\Sofinco');
-        $urls = $sofinco->getConfig()->getKwixoUrls();
-        return $sofinco->checkUrls($urls);
-    }
-
-    public function getMobileUrl()
-    {
-        $sofinco = $this->_objectManager->get('Sofinco\Epayment\Model\Sofinco');
-        $urls = $sofinco->getConfig()->getMobileUrls();
-        return $sofinco->checkUrls($urls);
-    }
-
     public function getSystemUrl()
     {
         $sofinco = $this->_objectManager->get('Sofinco\Epayment\Model\Sofinco');

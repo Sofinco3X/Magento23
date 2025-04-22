@@ -455,6 +455,8 @@ class Sofinco
         $lang = $languages[$lang];
         $values['PBX_LANGUE'] = $lang;
 
+        $values['PBX_SOURCE'] = 'RWD';
+
         // PayPal specific code
         /*
         if ($payment->getCode() == 'sfco_paypal') {
@@ -735,12 +737,14 @@ class Sofinco
         $countryCode = $this->getCountryCode($address->getCountryId());
         $countryName = $this->removeAccents($address->getCountryId());
         $countryCodeHomePhone = $this->getCountryPhoneCode($address->getCountryId());
+        if (empty($countryCodeHomePhone)) {
+            $countryCodeHomePhone = '+33';
+        }
         $homePhone = substr($address->getTelephone(), -9);
         $countryCodeMobilePhone = $this->getCountryPhoneCode($address->getCountryId());
         $mobilePhone = substr($address->getTelephone(), -9);
 
         $simpleXMLElement = new SimpleXMLElement("<Billing/>");
-        // $billingXML = $simpleXMLElement->addChild('Billing');
         $addressXML = $simpleXMLElement->addChild('Address');
         $addressXML->addChild('Title', $title);
         $addressXML->addChild('FirstName', $this->formatTextValue($firstName, 'ANS', 20));
@@ -753,8 +757,10 @@ class Sofinco
         $addressXML->addChild('CountryName', $this->formatTextValue($countryName, 'ANS', 50));
         $addressXML->addChild('CountryCodeHomePhone', $countryCodeHomePhone);
         $addressXML->addChild('HomePhone', $homePhone);
-        $addressXML->addChild('CountryCodeMobilePhone', $countryCodeMobilePhone);
-        $addressXML->addChild('MobilePhone', $mobilePhone);
+        if (!empty($countryCodeMobilePhone) && !empty($mobilePhone)) {
+            $addressXML->addChild('CountryCodeMobilePhone', $countryCodeMobilePhone);
+            $addressXML->addChild('MobilePhone', $mobilePhone);
+        }
 
         return trim(substr($simpleXMLElement->asXML(), 21));
     }
@@ -900,20 +906,6 @@ class Sofinco
     {
         $config = $this->getConfig();
         $urls = $config->getSystemUrls();
-        if (empty($urls)) {
-            $message = 'Missing URL for Sofinco system in configuration';
-            throw new \LogicException(__($message));
-        }
-
-        $url = $this->checkUrls($urls);
-
-        return $url;
-    }
-
-    public function getKwixoUrl()
-    {
-        $config = $this->getConfig();
-        $urls = $config->getKwixoUrls();
         if (empty($urls)) {
             $message = 'Missing URL for Sofinco system in configuration';
             throw new \LogicException(__($message));

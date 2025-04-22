@@ -22,13 +22,7 @@
 
 $values = $this->getFormFields();
 try {
-    if ($values['PBX_TYPEPAIEMENT'] == 'KWIXO') {
-        $url = $this->escapeUrl($this->getKwixoUrl());
-    } elseif ($this->helper('Sofinco\Epayment\Helper\Mobile')->isMobile()) {
-        $url = $this->escapeUrl($this->getMobileUrl());
-    } else {
-        $url = $this->escapeUrl($this->getSystemUrl());
-    }
+    $url = $this->escapeUrl($this->getSystemUrl());
     $type = $this->escapeUrl($this->getInputType());
 } catch (\Exception $e) {
     $error = $e;

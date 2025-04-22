@@ -1,4 +1,8 @@
 # Change Log
+## [1.0.20] 2025-04-22
+- Fixes for Mcrypt / OpenSSL
+- Fixes on PBX_BILLING & PBX_SOURCE
+
 ## [1.0.19] 2024-10-16
 - Improve compatibility with Magento 2.4.6 & PHP 8.2 compatibility
 - Fix order confirmation email
