@@ -1,4 +1,8 @@
 # Change Log
+## [1.0.21] 2026-01-20
+- Update public key
+- Fixes some deprecated on PHP 8.4
+
 ## [1.0.20] 2025-04-22
 - Fixes for Mcrypt / OpenSSL
 - Fixes on PBX_BILLING & PBX_SOURCE

@@ -100,8 +100,8 @@ abstract class AbstractPayment extends AbstractMethod
         \Magento\Payment\Helper\Data $paymentData,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         \Magento\Payment\Model\Method\Logger $logger,
-        \Magento\Framework\Model\ResourceModel\AbstractResource $resource = null,
-        \Magento\Framework\Data\Collection\AbstractDb $resourceCollection = null,
+        ?\Magento\Framework\Model\ResourceModel\AbstractResource $resource = null,
+        ?\Magento\Framework\Data\Collection\AbstractDb $resourceCollection = null,
         array $data = []
     ) {
         parent::__construct(
@@ -556,7 +556,7 @@ abstract class AbstractPayment extends AbstractMethod
      * @param  Mage_Sales_Model_Quote|null $quote
      * @return bool
      */
-    public function isAvailable(\Magento\Quote\Api\Data\CartInterface $quote = null)
+    public function isAvailable(?\Magento\Quote\Api\Data\CartInterface $quote = null)
     {
         if (parent::isAvailable($quote)) {// This order total is between min and max amount configuration
             $storeScope = \Magento\Store\Model\ScopeInterface::SCOPE_STORES;
@@ -862,7 +862,7 @@ abstract class AbstractPayment extends AbstractMethod
      *
      * @version 1.0.10
      */
-    public function onIPNError(Order $order, array $data, \Exception $e = null)
+    public function onIPNError(Order $order, array $data, ?\Exception $e = null)
     {
         $withCapture = $this->getConfigPaymentAction() != AbstractMethod::ACTION_AUTHORIZE;
 

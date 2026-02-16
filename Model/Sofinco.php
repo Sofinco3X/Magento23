@@ -392,6 +392,7 @@ class Sofinco
         $values['PBX_PORTEUR'] = $this->getBillingEmail($order);
         $values['PBX_DEVISE'] = $this->getCurrency($order);
         $values['PBX_CMD'] = $this->tokenizeOrder($order);
+        $values['PBX_SIGN_KEYSIZE'] = 2048;
 
         // Customer information
         $values['PBX_CUSTOMER'] = $this->getCustomerInformation($order);
